@@ -16,27 +16,23 @@ int last_state;
 ulong last_record_time = 0;  //ÉÏÒ»´Î¼ÇÂ¼µÄÊ±¼ä
 ulong update_gap_time = 0;   //×´Ì¬¸Ä±äÀÛ¼ÆÊ±¼ä
 long limit_time = 0;         //×´Ì¬¸Ä±äÏÞÖÆÊ±¼ä
-byte  gprs_resign_data = 0;
-byte gprs_rx_retry = 0;
-byte gprs_receive_resign_data =0;
 ulong single_tx_data;
 ulong single_rx_data;
-uint single_data_index = 0;
-uint single_data_re_index = 0;
+
 
 enum gprs_state
 {
-	GPRS_IDLE,                 			 //SDAÉèOUTPUT,SCLÉèIINPUT.Èç¹û¼ì²âsend_data_index´óÓÚ0,·¢ËÍÊý¾Ý£ºSDAÀ­µÍ£¬limit_timeÎª5T¡£
+	GPRS_IDLE,                  //SDAÉèOUTPUT,SCLÉèIINPUT.Èç¹û¼ì²âsend_data_index´óÓÚ0,·¢ËÍÊý¾Ý£ºSDAÀ­µÍ£¬limit_timeÎª5T¡£
 								//µÈ´ýSCL±äÎªµÍµçÆ½
-								 //Èç¹û¼ì²âµ½SDA±»À­µÍ,½ÓÊÕÊý¾Ý:SCLÉèÎªÊä³öÄ£Ê½£¬SCLÀ­µÍ¡£µÈ´ýSDA±ä³ÉµÍµçÆ½.
-	GPRS_WAIT_SCL_TO_LOW,		 //Èç¹û¼ì²âµ½SCL±»À­µÍ£¬µÈ´ý1TÊ±¼ä(update_gap_time>1T),½«SDAÀ­¸ß£¬µÈ´ýSCL±äÎª¸ßµçÆ½
-	                           			     	//·ñÔòÈç¹ûlimit_time==0£¬ÖÕÖ¹·¢ËÍÊý¾Ý¡£
-	GPRS_WAIT_SCL_TO_HIGH,      	//if(SCL==HIGH)½øÈë·¢ËÍÖØ·¢Êý¾Ý×´Ì¬¡£·ñÔòÖÕÖ¹·¢ËÍÊý¾Ý
-	SEND_REPEAT_SIGN,          		//SCLÉèÎªÊä³ö,¸ù¾Ýrepeat_sign×´Ì¬¾ö¶¨SDA×´Ì¬ µÈ´ý1TÊ±¼ä,½«SCLÀ­¸ß
-    	SEND_DATA_SCL_HIGH,          	//SCLÉèÎª¸ßµçÆ½£¬µÈ´ý1TÊ±¼ä£¬½øÈë·¢ËÍÊý¾Ý×´Ì¬
-    	SEND_DATA_SCL_LOW,                  			//SCLÀ­µÍ£¬¸ù¾Ýsinle_tx_data¶ÔÓ¦Î»ÊýµÄÊý¾Ý¾ö¶¨SDA·¢ËÍÊý¾Ý×´Ì¬,µÈ´ý1TÊ±¼ä£¬
-	                           				 //ÈôÊý¾ÝÎ´·¢Íê£¬½øÈëSEND_SET_SCL_HIGH×´Ì¬·ñÔòµÈ´ýsda ack
-	WAIT_SDA_ACK_LOW,          	 //Èô¼ì²âµ½SDAÎªµÍ,½øÈëWAIT_SDA_ACK_HIGH×´Ì¬£¬Èç¹ûlimit_time = 0,ÖÕÖ¹³ÌÐò
+	                            //Èç¹û¼ì²âµ½SDA±»À­µÍ,½ÓÊÕÊý¾Ý:SCLÉèÎªÊä³öÄ£Ê½£¬SCLÀ­µÍ¡£µÈ´ýSDA±ä³ÉµÍµçÆ½.
+	GPRS_WAIT_SCL_TO_LOW,       //Èç¹û¼ì²âµ½SCL±»À­µÍ£¬µÈ´ý1TÊ±¼ä(update_gap_time>1T),½«SDAÀ­¸ß£¬µÈ´ýSCL±äÎª¸ßµçÆ½
+	                            //·ñÔòÈç¹ûlimit_time==0£¬ÖÕÖ¹·¢ËÍÊý¾Ý¡£
+	GPRS_WAIT_SCL_TO_HIGH,      //if(SCL==HIGH)½øÈë·¢ËÍÖØ·¢Êý¾Ý×´Ì¬¡£·ñÔòÖÕÖ¹·¢ËÍÊý¾Ý
+	SEND_REPEAT_SIGN,           //SCLÉèÎªÊä³ö,¸ù¾Ýrepeat_sign×´Ì¬¾ö¶¨SDA×´Ì¬ µÈ´ý1TÊ±¼ä,½«SCLÀ­¸ß
+    SEND_SET_SCL_HIGH,          //SCLÉèÎª¸ßµçÆ½£¬µÈ´ý1TÊ±¼ä£¬½øÈë·¢ËÍÊý¾Ý×´Ì¬
+    SEND_DATA,                  //SCLÀ­µÍ£¬¸ù¾Ýsinle_tx_data¶ÔÓ¦Î»ÊýµÄÊý¾Ý¾ö¶¨SDA·¢ËÍÊý¾Ý×´Ì¬,µÈ´ý1TÊ±¼ä£¬
+	                            //ÈôÊý¾ÝÎ´·¢Íê£¬½øÈëSEND_SET_SCL_HIGH×´Ì¬·ñÔòµÈ´ýsda ack
+	WAIT_SDA_ACK_LOW,           //Èô¼ì²âµ½SDAÎªµÍ,½øÈëWAIT_SDA_ACK_HIGH×´Ì¬£¬Èç¹ûlimit_time = 0,ÖÕÖ¹³ÌÐò
 	WAIT_SDA_ACK_HIGH,			//Èç¼ì²âµ½SDAÎª¸ß,Êý¾Ý·¢ËÍ³É¹¦£¬½øÈëIDLE×´Ì¬µÈ´ýÏÂÒ»¸ö·¢ËÍÊý¾Ý¡£Èç¹ûlimit_time = 0,ÖÕÖ¹³ÌÐò
 	
 	GPRS_RE_WAIT_SDA_TO_LOW,		
@@ -64,11 +60,11 @@ void send_cid(byte cmd_data,uint data) //Ðè¼ÆËãÐ£ÑéºÍ²¢ÇÒºÏ²¢¿ØÖÆÃüÁîÊý¾ÝºÍ·¢ËÍÊ
 	 * |----|----------------|----|-------|
 	 *
 	 * |----| ---->cmd   4bit (28)
-	 *           |----------------| ---->data 16bit (12)
-	 *                                             |----| ---->Ð£ÑéºÍ 4bit (8)
+	 *      |----------------| ---->data 16bit (12)
+	 *                       |----| ---->Ð£ÑéºÍ 4bit (8)
 	 * */
 
-    	byte checksum = 0;
+    byte checksum = 0;
 	byte temp_data;
 	checksum = (cmd_data + data&0x0f
 		                + (data >> 4)&0x0f
@@ -87,21 +83,18 @@ void send_cid(byte cmd_data,uint data) //Ðè¼ÆËãÐ£ÑéºÍ²¢ÇÒºÏ²¢¿ØÖÆÃüÁîÊý¾ÝºÍ·¢ËÍÊ
 byte retry_cnt = 0;
 void prepare_data(void)
 {
-	int i;
 	if(retry_cnt > 0)
 	{
 		retry_cnt--;
+		single_tx_data = send_data[send_data_index];
 	}
-	else if(retry_cnt == 0)
+	else if(send_data_index > 0)
 	{
-		retry_cnt = GPRS_RETRY_MAX;
-		single_tx_data = send_data[0];
-		for(i =0,i<GPRS_DATA_MAX,i++)
-		{
-			send_data[i] = send_data[i+1];
-		}
-		send_data_index--;	
+		retry_cnt = 0;
+		send_data_index--;
+		single_tx_data = send_data[send_data_index];		
 	}
+	single_data_index = 8;
 }
 
 void update_time_state(void)
@@ -131,59 +124,25 @@ void update_time_state(void)
 void send_abort(void)
 {
 	curr_state = GPRS_IDLE;
+	if(retry_cnt == 0 )
+	{
+		retry_cnt = 5; 
+	}
 }
 
-void receive_abort(void)
-{
-	curr_state = GPRS_IDLE;
-}
 void setup(void)
 {
 	curr_state = GPRS_IDLE; 
-   	last_state = GPRS_IDLE;
-
-	pinMode(GPRS_SDA,INPUT_PULLUP);
-	pinMode(GPRS_SCL,INPUT_PULLUP);
+    last_state;
 }
 
-int deal_data()
-{
- 	byte checksum = 0;
-	checksum = checksum + ((single_rx_data>>4) & 0x0f);
-	checksum = checksum + ((single_rx_data>>8) & 0x0f);
-	checksum = checksum + ((single_rx_data>>12)&0x0f);
-	checksum = checksum + ((single_rx_data>>16)&0x0f);
-	checksum = checksum + ((single_rx_data>>20)&0x0f);
-	checksum = checksum &0x0f;
-	byte tmp = 0;int i;
-	for(i = 0;i<4;i++)
-	{
-		bitWrite(tmp,i,bitread(checksum,3-i));
-	}
-	checksum = tmp;
-	if(checksum != (single_rx_data&0x0f))
-	{
-		return 0;
-	}
-	gprs_rx_retry = ((single_rx_data & 0x1000000)==0)? 0:1;
-	return 1;
-	
-}
 void loop(void)
 {
 	update_time_state();
 	switch(curr_state)
 	{
 		case GPRS_IDLE:
-			if(digitalRead(GPRS_SDA) == LOW)
-			{
-				pinMode(GPRS_SCL,OUTPUT);
-				digitalWrite(GPRS_SCL,LOW);
-				curr_state = GPRS_RE_WAIT_SDA_HIGH;		
-				limit_time = 5*GPRS_SIGN_WIDTH;				
-			}
-			
-			if(send_data_index > 0 || retry_cnt >0)
+			if(send_data_index > 0)
 			{
 			 	prepare_data();
 				pinMode(GPRS_SDA,OUTPUT);
@@ -191,11 +150,24 @@ void loop(void)
 				curr_state = GPRS_WAIT_SCL_TO_LOW;
 				limit_time = GPRS_SIGN_WIDTH * 5;
 			}
-			
+			else
+			{
+				pinMode(GPRS_SDA,INPUT_PULLUP);
+				if(digitalRead(GPRS_SDA) == LOW)
+				{
+					if(update_gap_time > GPRS_SIGH_WIDTH)
+					{
+						pinMode(GPRS_SCL,OUTPUT);
+						digitalWrite(GPRS_SCL,LOW);
+						curr_state = GPRS_RE_WAIT_SDA_HIGH;		
+						limit_time = 5*GPRS_SIGN_WIDTH;				
+					}
+				}
+			}
 			break;
 
 		case GPRS_WAIT_SCL_TO_LOW:
-			pinMode(GPRS_SCL,INPUT_PULLUP);
+			pinMode(pinSCL,INPUT_PULLUP);
 			if(digitalRead(GPRS_SCL) == LOW)
 			{
 				if(update_gap_time > GPRS_SIGN_WIDTH)
@@ -213,10 +185,10 @@ void loop(void)
 			break;
 
 		case GPRS_WAIT_SCL_TO_HIGH:
-			if(digitalRead(GPRS_SCL) == HIGH)
+			if(digitalRead(GPRS_SCL) == LOW)
 			{
 				update_gap_time = 0;
-				curr_state = SEND_REPEAT_SIGN;
+				curr_state = SEND_RSIGN;
 			}
 			if(limit_time == 0)
 			{
@@ -227,13 +199,9 @@ void loop(void)
 		case SEND_REPEAT_SIGN:	
 			if(update_gap_time > GPRS_SIGN_WIDTH)
 			{
-				update_gap_time = 0;
-				digitalWrite(GPRS_SCL,HIGH);
 				pinMode(GPRS_SCL,OUTPUT);
-				
 				digitalWrite(GPRS_SCL,LOW);
-				digitalWrite(GPRS_SDA,gprs_resign_data);
-				
+				digitalWrite(GPRS_SDA,LOW);
 				curr_state = SEND_DATA_SCL_HIGH;
 			}
 			break;
@@ -241,7 +209,6 @@ void loop(void)
 		case SEND_DATA_SCL_HIGH:
 			if(update_gap_time > GPRS_SIGN_WIDTH)
 			{
-				update_gap_time = 0;
 				digitalWrite(GPRS_SCL,HIGH);
 				curr_state = SEND_DATA_SCL_LOW;
 			}
@@ -251,9 +218,9 @@ void loop(void)
 			if(update_gap_time > GPRS_SIGN_WIDTH)
 			{
 				digitalWrite(GPRS_SCL,LOW);
-				if(31 - single_data_index > 7)
+				if(single_data_index > 7)
 				{
-					if(bitRead(single_tx_data,31 - single_data_index) == 1)
+					if(bitRead(single_tx_data,single_data_index) == 1)
 					{
 						digitalWrite(GPRS_SDA,HIGH);
 					}
@@ -261,22 +228,22 @@ void loop(void)
 					{
 						digitalWrite(GPRS_SDA,LOW);
 					}
-					single_data_index++;
+					single_data_index--;
 					curr_state = SEND_DATA_SCL_HIGH;
 				}
 				else
 				{
-					pinMode(GPRS_SDA,INPUT_PULLUP);
-					curr_state = WAIT_SDA_ACK_LOW;
+					curr_state = WAIT_SDA_ACK;
 					limit_time = 2*GPRS_SIGN_WIDTH;
 				}
 			}
 			break;
 		case WAIT_SDA_ACK_LOW:
+			pinMode(GPRS_SDA,INPUT_PULLUP);
 			if(digitalRead(GPRS_SDA) == LOW)
 			{
 				curr_state = WAIT_SDA_ACK_HIGH;
-				limit_time = 5*GPRS_SIGN_WIDTH;
+				limit_time = 2*GPRS_SIGN_WIDTH;
 			}
 			
 			if(limit_time == 0)
@@ -288,11 +255,6 @@ void loop(void)
 			if(digitalRead(GPRS_SDA) == HIGH)
 			{
 				curr_state = GPRS_IDLE;
-				limit_time = 10*GPRS_SIGN_WIDTH;
-				gprs_resign_data = (gprs_resign_data + 1)%2;
-				retry_cnt = 0;
-				pinMode(GPRS_SDA,INPUT_PULLUP);
-				pinMode(GPRS_SCL,INPUT_PULLUP);
 			}
 			if(limit_time == 0)
 			{
@@ -302,19 +264,19 @@ void loop(void)
 		case GPRS_RE_WAIT_SDA_HIGH:
 			if(digitalRead(GPRS_SDA) == HIGH)
 			{
-				digitalWrite(GPRS_SCL,HIGH);
-				curr_state = GPRS_RE_WAIT_SCL_LOW;
-				limit_time = 5*GPRS_SIGN_WIDTH;
-				pinMode(GPRS_SCL,INPUT_PULUP);
-				single_rx_data = 0;
-				single_data_re_index = 0;
+				if(update_gap_time > GPRS_SIGN_WIDTH)
+				{
+					digitalWrite(GPRS_SCL,HIGH);
+					curr_state = GPRS_RE_WAIT_RETRY_LOW;
+					limit_time = 5*GPRS_SIGN_WIDTH;
+				}
 			}
 			if(limit_time == 0)
 			{
-				receive_abort();
+				curr_state = GPRS_IDLE;
 			}
-			break;
-	/*	case GPRS_RE_WAIT_RETRY_SCL_LOW:
+		case GPRS_RE_WAIT_RETRY_SCL_LOW:
+			pinMode(GPRS_SCL,INPUT_PULLUP);
 			if(digitalRead(GPRS_SCL) == LOW)
 			{
 				curr_state = GPRS_RE_WAIT_RETRY_SCL_HIGH;
@@ -322,7 +284,7 @@ void loop(void)
 			}
 			if(limit_time == 0)
 			{
-				receive_abort();
+				curr_state == GPRS_IDLE;
 			}
 			break;
 		case GPRS_RE_WAIT_RETRY_SCL_HIGH:
@@ -330,11 +292,11 @@ void loop(void)
 			{
 				if(digitalRead(GPRS_SDA) == HIGH)
 				{
-					gprs_receive_resign_data = 1;
+					re_sign = 1;
 				}
 				else
 				{
-					gprs_receive_resign_data = 0;
+					re_sign = 0;
 				}
 				curr_state = GPRS_RE_WAIT_SCL_LOW;
 			}
@@ -342,7 +304,7 @@ void loop(void)
 			{
 				curr_state = GPRS_IDLE;
 			}
-			break;*/
+			break;
 		case GPRS_RE_WAIT_SCL_LOW:
 			if(digitalRead(GPRS_SCL) == LOW)
 			{
@@ -357,46 +319,42 @@ void loop(void)
 		case  GPRS_RE_WAIT_SCL_HIGH:
 			if(digitalRead(GPRS_SCL) == HIGH)
 			{
-				//single_rx_data = (single_rx_data<<1) + digitalRead(GPRS_SCL);
 				if(digitalRead(GPRS_SDA) == HIGH)
 				{
-					bitwrite(single_rx_data,24 - single_data_re_index,1);
+					bitwrite(single_rx_data,receive_data_index,1);
 				}
 				else
 				{
-					bitWrite(single_rx_data,24 - single_data_re_index,0);
+					bitWrite(single_rx_data,receive_data_index,0);
 				}
-				single_data_re_index ++;
-				
-				if(single_data_re_index>=25)	
+				if(receive_data_index > 7)	
 				{
-					if(deal_data())
-					{
-						curr_state = GPRS_RE_SEND_ACK_LOW;
-					}
-					else 
-					{
-						receive_abort();
-						curr_state = GPRS_IDLE;
-					}
-				}
-				else
-				{
-					limit_time = 5*GPRS_SIGN_WIDTH;
+					receive_index--;
 					curr_state = GPRS_RE_WAIT_SCL_LOW;
-			    	}
+				}
+				else
+				{
+					curr_state = GPRS_RE_SEND_ACK_LOW;
+			    }
 			}
 			if(limit_time == 0)
 			{
-				receive_abort();
+				curr_state == GPRS_IDLE;
 			}
-			break;
+				break;
 		case GPRS_RE_SEND_ACK_LOW:
 		{
-			digitalWrite(GPRS_SDA,HIGH);
-			pinMode(GPRS_SDA,INPUT_PULLUP);
-			curr_state = GPRS_RE_SEND_ACK_HIGH;
-			break;
+			if(calculate_checksum() == TRUE)
+			{
+				pinMode(GPRS_SDA,LOW);
+				curr_state = GPRS_RE_SEND_ACK_HIGH;
+			}
+			else
+			{
+				curr_state = GPRS_IDLE;
+			}
+		} break;
+
 		case GPRS_RE_SEND_ACK_HIGH:
 		{
 			if(update_gap_time > GPRS_SIGN_WIDTH)
@@ -404,7 +362,10 @@ void loop(void)
 				digitalWrite(GPRS_SDA,HIGH);
 				curr_state = GPRS_IDLE;
 			}
-			break;
+			else
+			{
+				curr_state = GPRS_IDLE;
+			}break;
 		}
 	}
 	if(last_state != curr_state)
